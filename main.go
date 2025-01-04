@@ -9,8 +9,10 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/stevegore/stravaKudos/bot"
 	"github.com/stevegore/stravaKudos/parser"
@@ -75,6 +77,12 @@ func main() {
 }
 
 func kudosAllFriendsActivities(c *parser.Client, s *bot.StravaBot) {
+
+	// Delay a random number of minutes between 1-10 minutes
+	delay := time.Duration(rand.Intn(10)+1) * time.Minute
+	slog.Debug("pausing for random interval", "duration", delay.String())
+	time.Sleep(delay)
+
 	s.GetMyProfile(c)
 	s.GetMyFriends(c)
 	if len(s.Friends) == 0 {
