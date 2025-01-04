@@ -2,14 +2,14 @@ package bot
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *Strava) GetMyFriends(c *parser.Client) {
+func (s *StravaBot) GetMyFriends(c *parser.Client) {
 	var headers = map[string]string{}
 
 	headers["authorization"] = "access_token " + s.authToken
@@ -19,15 +19,16 @@ func (s *Strava) GetMyFriends(c *parser.Client) {
 	jsonData, statusCode := c.MakeRequest(myFolowersUrl, "GET", "", headers)
 
 	if statusCode != 200 {
-		log.Fatalf("Status from getMyFolowers request no HTTP_OK | statusCode => %d", statusCode)
+		slog.Error("couldn't get friends", "statusCode", statusCode)
+		return
 	}
 
 	var results []map[string]interface{}
 	err := json.Unmarshal([]byte(jsonData), &results)
-	c.CheckError(err)
-
-	s.Friends = []string{}
-	s.FriendsInfo = make(map[string]string)
+	if err != nil {
+		slog.Error("couldn't unmarshal friends", "err", slog.String("error", err.Error()))
+		return
+	}
 
 	for _, result := range results {
 		if _, ok := result["id"]; ok {

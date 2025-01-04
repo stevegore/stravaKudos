@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"log"
+	"log/slog"
 	"strconv"
 
 	"strings"
@@ -9,7 +9,7 @@ import (
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *Strava) kudosFriend(c *parser.Client, friendId int64) {
+func (s *StravaBot) kudosFriend(c *parser.Client, friendId int64) {
 	var headers = map[string]string{}
 	headers["authorization"] = "access_token " + s.authToken
 
@@ -18,6 +18,7 @@ func (s *Strava) kudosFriend(c *parser.Client, friendId int64) {
 	_, statusCode := c.MakeRequest(myFolowersUrl, "POST", "", headers)
 
 	if statusCode != 201 {
-		log.Fatalf("Status from kudosFriend request no HTTP_CREATED | statusCode => %d", statusCode)
+		slog.Error("couldn't give kudos", "statusCode", statusCode)
+		return
 	}
 }

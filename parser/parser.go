@@ -2,7 +2,7 @@ package parser
 
 import (
 	"io"
-	"io/ioutil"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -12,7 +12,6 @@ import (
 
 type Client struct {
 	userAgent    string
-	debug        bool
 	WebClient    *http.Client
 	requestBody  io.Reader
 	request      *http.Request
@@ -22,8 +21,8 @@ type Client struct {
 	url          *url.URL
 }
 
-func (c *Client) InitWebClient() {
-
+func NewClient() *Client {
+	c := &Client{}
 	c.WebClient = &http.Client{
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
@@ -37,6 +36,10 @@ func (c *Client) InitWebClient() {
 			DisableCompression:    true,
 		},
 	}
+
+	c.userAgent = "Strava/33.0.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004)"
+
+	return c
 }
 
 func (c *Client) MakeRequest(
@@ -48,14 +51,18 @@ func (c *Client) MakeRequest(
 
 	var err error
 	c.url, err = url.Parse(siteUrl)
-	c.CheckError(err)
+	if err != nil {
+		slog.Error("couldn't parse url", "url", siteUrl)
+	}
 
 	if c.requestBody = nil; len(body) > 0 {
 		c.requestBody = strings.NewReader(body)
 	}
 
 	c.request, err = http.NewRequest(method, c.url.String(), c.requestBody)
-	c.CheckError(err)
+	if err != nil {
+		slog.Error("couldn't create request", "err", slog.String("error", err.Error()))
+	}
 
 	c.request.Header.Set("user-agent", c.userAgent)
 
@@ -66,17 +73,23 @@ func (c *Client) MakeRequest(
 	}
 
 	c.response, err = c.WebClient.Do(c.request)
-	c.CheckError(err)
+	if err != nil {
+		slog.Error("couldn't make request", "err", slog.String("error", err.Error()))
+	}
 
 	if c.response != nil {
 		if c.response.StatusCode == http.StatusOK {
-			page, err := ioutil.ReadAll(c.response.Body)
-			c.CheckError(err)
+			page, err := io.ReadAll(c.response.Body)
+			if err != nil {
+				slog.Error("couldn't read response body", "err", slog.String("error", err.Error()))
+			}
 			c.responseData = string(page)
 		}
 
 		defer func() {
-			c.CheckError(c.response.Body.Close())
+			if err := c.response.Body.Close(); err != nil {
+				slog.Error("couldn't close response body", "err", slog.String("error", err.Error()))
+			}
 		}()
 
 	}

@@ -2,12 +2,13 @@ package bot
 
 import (
 	"encoding/json"
+	"log/slog"
 	"strconv"
 
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *Strava) GetMyProfile(c *parser.Client) (jsonData string) {
+func (s *StravaBot) GetMyProfile(c *parser.Client) (jsonData string) {
 
 	var headers = map[string]string{}
 
@@ -24,10 +25,12 @@ func (s *Strava) GetMyProfile(c *parser.Client) (jsonData string) {
 
 	err := json.Unmarshal([]byte(jsonData), &result)
 
-	c.CheckError(err)
+	if err != nil {
+		slog.Error("couldn't unmarshal my profile", "err", slog.String("error", err.Error()))
+		return
+	}
 
 	if _, ok := result["id"]; ok {
-
 		s.athleteId = strconv.Itoa(int(result["id"].(float64)))
 	}
 
