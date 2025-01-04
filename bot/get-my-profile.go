@@ -2,8 +2,9 @@ package bot
 
 import (
 	"encoding/json"
-	"stravaKudos/parser"
 	"strconv"
+
+	"github.com/stevegore/stravaKudos/parser"
 )
 
 func (s *Strava) GetMyProfile(c *parser.Client) (jsonData string) {

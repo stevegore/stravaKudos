@@ -7,13 +7,15 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"stravaKudos/bot"
-	"stravaKudos/parser"
 	"strconv"
 	"time"
+
+	"github.com/stevegore/stravaKudos/bot"
+	"github.com/stevegore/stravaKudos/parser"
+
+	"github.com/joho/godotenv"
 )
 
 func init() {

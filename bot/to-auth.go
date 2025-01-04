@@ -5,7 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"stravaKudos/parser"
+
+	"github.com/stevegore/stravaKudos/parser"
 )
 
 func (s *Strava) toAuth(c *parser.Client) {

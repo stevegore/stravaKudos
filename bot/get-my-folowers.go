@@ -3,9 +3,10 @@ package bot
 import (
 	"encoding/json"
 	"log"
-	"stravaKudos/parser"
 	"strconv"
 	"strings"
+
+	"github.com/stevegore/stravaKudos/parser"
 )
 
 func (s *Strava) GetMyFollowers(c *parser.Client){

@@ -2,8 +2,11 @@ package bot
 
 import (
 	"log"
-	"stravaKudos/parser"
+	"strconv"
+
 	"strings"
+
+	"github.com/stevegore/stravaKudos/parser"
 )
 
 func (s *Strava) kudosFollower(c *parser.Client, followerId string){
