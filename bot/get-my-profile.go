@@ -26,7 +26,7 @@ func (s *Strava) GetMyProfile(c *parser.Client) (jsonData string) {
 
 	c.CheckError(err)
 
-	if _, ok:= result["id"]; ok {
+	if _, ok := result["id"]; ok {
 
 		s.athleteId = strconv.Itoa(int(result["id"].(float64)))
 	}
