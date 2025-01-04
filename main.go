@@ -11,12 +11,12 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/stevegore/stravaKudos/bot"
 	"github.com/stevegore/stravaKudos/parser"
 
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 )
 
 func init() {
@@ -48,34 +48,51 @@ func main() {
 
 	c := parser.NewClient()
 	s := bot.NewStravaBot()
+	cron := cron.New()
 
-	for {
-		s.GetMyProfile(c)
-		s.GetMyFriends(c)
-		if len(s.Friends) == 0 {
-			slog.Info("no friends found")
-			os.Exit(2)
-		}
-		slog.Debug("retrieved friends", "friend count", strconv.Itoa(len(s.Friends)))
+	kudosAllFriendsActivities(c, s) // Do it at start up
 
-		// Create a semaphore channel to limit concurrency to 8
-		sem := make(chan struct{}, 8)
+	// Schedule the kudosAllFriendsActivities function to run at 7:16 AM and 12:04 every day
+	_, err := cron.AddFunc("16 7 * * *", func() {
+		kudosAllFriendsActivities(c, s)
+	})
+	_, err = cron.AddFunc("4 12 * * *", func() {
+		kudosAllFriendsActivities(c, s)
+	})
+	if err != nil {
+		slog.Error("failed to schedule task", "error", err)
+		os.Exit(1)
+	}
+	cron.Start()
 
-		for _, friendId := range s.Friends {
-			sem <- struct{}{} // Acquire a slot
+	// Keep the program running
+	select {}
+}
 
-			go func(friendId string) {
-				defer func() { <-sem }() // Release the slot
+func kudosAllFriendsActivities(c *parser.Client, s *bot.StravaBot) {
+	s.GetMyProfile(c)
+	s.GetMyFriends(c)
+	if len(s.Friends) == 0 {
+		slog.Info("no friends found")
+		return
+	}
+	slog.Debug("retrieved friends", "friend count", strconv.Itoa(len(s.Friends)))
 
-				s.ParseAndKudosFriend(friendId)
-			}(friendId)
-		}
+	// Create a semaphore channel to limit concurrency to 8
+	sem := make(chan struct{}, 8)
 
-		// Wait for all goroutines to finish
-		for i := 0; i < cap(sem); i++ {
-			sem <- struct{}{}
-		}
+	for _, friendId := range s.Friends {
+		sem <- struct{}{} // Acquire a slot
 
-		time.Sleep(2 * time.Hour)
+		go func(friendId string) {
+			defer func() { <-sem }() // Release the slot
+
+			s.ParseAndKudosFriend(friendId)
+		}(friendId)
+	}
+
+	// Wait for all goroutines to finish
+	for i := 0; i < cap(sem); i++ {
+		sem <- struct{}{}
 	}
 }
