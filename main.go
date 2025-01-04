@@ -52,10 +52,15 @@ func main() {
 
 	kudosAllFriendsActivities(c, s) // Do it at start up
 
-	// Schedule the kudosAllFriendsActivities function to run at 7:16 AM and 12:04 every day
-	_, err := cron.AddFunc("16 7 * * *", func() {
+	// Schedule the kudosAllFriendsActivities function to run at 8:44 AM and 12:04 every day
+	_, err := cron.AddFunc("44 8 * * *", func() {
 		kudosAllFriendsActivities(c, s)
 	})
+	if err != nil {
+		slog.Error("failed to schedule task", "error", err)
+		os.Exit(1)
+	}
+
 	_, err = cron.AddFunc("4 12 * * *", func() {
 		kudosAllFriendsActivities(c, s)
 	})
