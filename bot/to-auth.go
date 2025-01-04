@@ -2,36 +2,35 @@ package bot
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *Strava) toAuth(c *parser.Client) {
+func (s *StravaBot) toAuth(c *parser.Client) {
+
+	missing := []string{}
+	requiredEnvVars := []string{"USER_EMAIL", "USER_PASSWORD", "CLIENT_SECRET"}
+	for _, envVar := range requiredEnvVars {
+		_, exists := os.LookupEnv(envVar)
+		if !exists {
+			missing = append(missing, envVar)
+		}
+	}
+
+	if len(missing) > 0 {
+		slog.Error("required environment variables not found", "missing", missing)
+		os.Exit(3)
+	}
 
 	var headers = map[string]string{}
 
 	headers["Content-Type"] = "application/json"
 
-	email, EmailEnvExists := os.LookupEnv("USER_EMAIL")
-
-	password, PasswordEnvExists := os.LookupEnv("USER_PASSWORD")
-
-	clientSecret, ClientSecretEnvExists := os.LookupEnv("CLIENT_SECRET")
-
-	if !EmailEnvExists {
-		log.Fatal("USER_EMAIL no found in .env file")
-	}
-
-	if !PasswordEnvExists {
-		log.Fatal("USER_PASSWORD no found in .env file")
-	}
-
-	if !ClientSecretEnvExists {
-		log.Fatal("CLIENT_SECRET no found in .env file")
-	}
+	email := os.Getenv("USER_EMAIL")
+	password := os.Getenv("USER_PASSWORD")
+	clientSecret := os.Getenv("CLIENT_SECRET")
 
 	type AuthReqBody struct {
 		ClientId     int    `json:"client_id,omitempty"`
@@ -48,45 +47,50 @@ func (s *Strava) toAuth(c *parser.Client) {
 	}
 
 	authReqBodyJson, err := json.Marshal(authReqBody)
-	c.CheckError(err)
+	if err != nil {
+		slog.Error("error marshalling auth request body", "error", slog.String("error", err.Error()))
+	}
 
 	html, statusCode := c.MakeRequest(s.MapUrls["auth_url"], "POST", string(authReqBodyJson), headers)
 
 	if statusCode != 200 {
-		log.Fatalf("Status from auth request no HTTP_OK | statusCode => %d", statusCode)
+		slog.Error("error getting auth response", "statusCode", statusCode)
+		os.Exit(5)
 	}
 
 	var result map[string]interface{}
 
 	err = json.Unmarshal([]byte(html), &result)
-	c.CheckError(err)
+	if err != nil {
+		slog.Error("error unmarshalling auth response", "error", slog.String("error", err.Error()))
+	}
 
 	if _, ok := result["access_token"]; ok {
 		s.authToken = result["access_token"].(string)
 		err = s.saveAuthToken()
-		c.CheckError(err)
+		if err != nil {
+			slog.Error("error saving auth token", "error", err)
+		}
 	}
-
 }
 
-func (s *Strava) ReadAuthToken() {
+func (s *StravaBot) ReadAuthToken() {
 
 	tokenFile, tokenEnvExists := os.LookupEnv("AUTH_TOKEN")
 
 	if tokenEnvExists {
 
-		token, err := ioutil.ReadFile(tokenFile)
+		token, err := os.ReadFile(tokenFile)
 
 		if err != nil {
-			log.Panicf("func readAuthToken(): failed reading data from tokenFile: %s", err)
+			slog.Error("couldn't read token file", "error", err)
 		}
 
 		s.authToken = string(token)
 	}
 }
 
-
-func (s *Strava) saveAuthToken() (err error) {
-	err = ioutil.WriteFile(os.Getenv("AUTH_TOKEN"), []byte(s.authToken), 0644)
+func (s *StravaBot) saveAuthToken() (err error) {
+	err = os.WriteFile(os.Getenv("AUTH_TOKEN"), []byte(s.authToken), 0644)
 	return
 }

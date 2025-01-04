@@ -2,7 +2,7 @@ package bot
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -11,40 +11,39 @@ import (
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *Strava) ParseAndKudosFriend(friendId string) {
+func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 
-	c := &parser.Client{}
+	c := parser.NewClient()
 
-	c.InitWebClient()
-
-	c.SetUserAgent("Strava/33.0.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004)")
+	friendName := s.FriendsInfo[friendId]
 
 	var headers = map[string]string{}
 	headers["authorization"] = "access_token " + s.authToken
 
+	slog.Debug("getting activities", "friend", friendName)
 	var feedFolowerUrl = strings.ReplaceAll(s.MapUrls["feed_url"], "{ATHLETE-ID}", friendId) + s.MapUrls["feed_param"]
 
 	jsonData, statusCode := c.MakeRequest(feedFolowerUrl, "GET", "", headers)
 
 	if statusCode != 200 {
-		log.Fatalf("Status from get friend feed (friend => %s) request no HTTP_OK | statusCode => %d", friendId, statusCode)
+		slog.Error("couldn't get friend's activities", "statusCode", statusCode)
+		return
 	}
 
 	var results []parser.FeedEntry
 
 	err := json.Unmarshal([]byte(jsonData), &results)
-	c.CheckError(err)
+	if err != nil {
+		slog.Error("couldn't unmarshal friend's activities", "err", slog.String("error", err.Error()))
+		return
+	}
 
-	c.ToLog("Getting activities for", s.FriendsInfo[friendId], "(", friendId, ")")
 	oneWeekAgo := time.Now().AddDate(0, 0, -7)
-
 	for _, result := range results {
 
 		item := result.Item
-
 		if item.StartDate.After(oneWeekAgo) && !item.HasKudoed {
-			c.ToLog("Giving kudos to", item.Name, "by", s.FriendsInfo[friendId], "(", friendId, ")")
-
+			slog.Info("giving kudos", "friend", friendName, "activity", item.Name, "date", item.StartDate.Format("2006-01-02 15:04"))
 			s.kudosFriend(c, item.ID)
 
 			n := rand.Intn(10) // n will be between 0 and 10
