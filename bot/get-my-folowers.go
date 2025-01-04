@@ -9,12 +9,12 @@ import (
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *Strava) GetMyFollowers(c *parser.Client){
+func (s *Strava) GetMyFriends(c *parser.Client) {
 	var headers = map[string]string{}
 
 	headers["authorization"] = "access_token " + s.authToken
 
-	var myFolowersUrl = strings.ReplaceAll(s.MapUrls["followers_url"], "{ATHLETE-ID}", s.athleteId)
+	var myFolowersUrl = strings.ReplaceAll(s.MapUrls["friends_url"], "{ATHLETE-ID}", s.athleteId)
 
 	jsonData, statusCode := c.MakeRequest(myFolowersUrl, "GET", "", headers)
 
@@ -26,20 +26,19 @@ func (s *Strava) GetMyFollowers(c *parser.Client){
 	err := json.Unmarshal([]byte(jsonData), &results)
 	c.CheckError(err)
 
-
-	s.Followers = []string{}
-	s.FollowersInfo = make(map[string]string)
+	s.Friends = []string{}
+	s.FriendsInfo = make(map[string]string)
 
 	for _, result := range results {
-		if _, ok:= result["id"]; ok {
+		if _, ok := result["id"]; ok {
 
-			followersId := strconv.Itoa(int(result["id"].(float64)))
+			friendsId := strconv.Itoa(int(result["id"].(float64)))
 
 			username := result["firstname"].(string) + " " + result["lastname"].(string)
 
-			s.Followers = append(s.Followers, followersId)
+			s.Friends = append(s.Friends, friendsId)
 
-			s.FollowersInfo[followersId] = username
+			s.FriendsInfo[friendsId] = username
 		}
 	}
 }

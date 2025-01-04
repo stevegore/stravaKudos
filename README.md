@@ -1,5 +1,6 @@
-# stravaKudos
-The bot will monitor your followers every 2 hours and if it finds new activities will send liked it.
+# Strava Kudos
+
+The bot will monitor your friends (i.e. people you follow) every 2 hours and if it finds new activities will give kudos.
 
 Bot uses [Strava API v3](https://developers.strava.com/docs/reference/).
 

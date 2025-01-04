@@ -37,30 +37,28 @@ func main() {
 
 	s := &bot.Strava{}
 
-	var scheme = "https"
-	var siteDomain = scheme + "://m.strava.com"
+	var siteDomain = "https://strava.com"
 	var langParam = "hl=en"
 
 	s.MapUrls = map[string]string{
-		"auth_url":      siteDomain + "/api/v3/oauth/internal/token?" + langParam,
-		"my_profile":    siteDomain + "/api/v3/athlete?" + langParam,
-		"followers_url": siteDomain + "/api/v3/athletes/{ATHLETE-ID}/followers?" + langParam,
-		"feed_url":      siteDomain + "/api/v3/feed/athlete/{ATHLETE-ID}",
-		"feed_param":    "?photo_sizes[]=240&single_entity_supported=true&modular=true&" + langParam,
-		"kudos_url":     siteDomain + "/api/v3/activities/{ACTIVITIES-ID}/kudos?" + langParam,
+		"auth_url":    siteDomain + "/api/v3/oauth/internal/token?" + langParam,
+		"my_profile":  siteDomain + "/api/v3/athlete?" + langParam,
+		"friends_url": siteDomain + "/api/v3/athletes/{ATHLETE-ID}/friends?" + langParam,
+		"feed_url":    siteDomain + "/api/v3/feed/athlete/{ATHLETE-ID}",
+		"feed_param":  "?photo_sizes[]=240&single_entity_supported=true&modular=true&" + langParam,
+		"kudos_url":   siteDomain + "/api/v3/activities/{ACTIVITIES-ID}/kudos?" + langParam,
 	}
 
 	s.ReadAuthToken()
 
 	for {
 		s.GetMyProfile(c)
-		s.GetMyFollowers(c)
+		s.GetMyFriends(c)
 
-		c.ToLog("Followers => ", s.Followers)
+		c.ToLog("Friends: ", s.Friends)
 
-		for _, followerId := range s.Followers {
-
-			s.ParseAndKudosFollower(c, followerId)
+		for _, friendId := range s.Friends {
+				s.ParseAndKudosFriend(friendId)
 		}
 
 		c.ToLog(" THE END LOOP ")

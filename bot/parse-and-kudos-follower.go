@@ -11,17 +11,17 @@ import (
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *Strava) ParseAndKudosFollower(c *parser.Client, followerId string){
+func (s *Strava) ParseAndKudosFriend(friendId string) {
 
 	var headers = map[string]string{}
 	headers["authorization"] = "access_token " + s.authToken
 
-	var feedFolowerUrl = strings.ReplaceAll(s.MapUrls["feed_url"], "{ATHLETE-ID}", followerId) + s.MapUrls["feed_param"]
+	var feedFolowerUrl = strings.ReplaceAll(s.MapUrls["feed_url"], "{ATHLETE-ID}", friendId) + s.MapUrls["feed_param"]
 
 	jsonData, statusCode := c.MakeRequest(feedFolowerUrl, "GET", "", headers)
 
 	if statusCode != 200 {
-		log.Fatalf("Status from get follower feed (follower => %s) request no HTTP_OK | statusCode => %d", followerId, statusCode)
+		log.Fatalf("Status from get friend feed (friend => %s) request no HTTP_OK | statusCode => %d", friendId, statusCode)
 	}
 
 	var results []map[string]interface{}
@@ -29,7 +29,7 @@ func (s *Strava) ParseAndKudosFollower(c *parser.Client, followerId string){
 	err := json.Unmarshal([]byte(jsonData), &results)
 	c.CheckError(err)
 
-	c.ToLog("parse user => ", s.FollowersInfo[followerId], "(", followerId, ")")
+	c.ToLog("Getting activities for", s.FriendsInfo[friendId], "(", friendId, ")")
 
 	for _, result := range results {
 
