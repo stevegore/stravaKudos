@@ -13,6 +13,12 @@ import (
 
 func (s *Strava) ParseAndKudosFriend(friendId string) {
 
+	c := &parser.Client{}
+
+	c.InitWebClient()
+
+	c.SetUserAgent("Strava/33.0.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004)")
+
 	var headers = map[string]string{}
 	headers["authorization"] = "access_token " + s.authToken
 
@@ -24,32 +30,25 @@ func (s *Strava) ParseAndKudosFriend(friendId string) {
 		log.Fatalf("Status from get friend feed (friend => %s) request no HTTP_OK | statusCode => %d", friendId, statusCode)
 	}
 
-	var results []map[string]interface{}
+	var results []parser.FeedEntry
 
 	err := json.Unmarshal([]byte(jsonData), &results)
 	c.CheckError(err)
 
 	c.ToLog("Getting activities for", s.FriendsInfo[friendId], "(", friendId, ")")
+	oneWeekAgo := time.Now().AddDate(0, 0, -7)
 
 	for _, result := range results {
 
-		item := result["item"].(map[string]interface{})
+		item := result.Item
 
-		if _, ok:= item["has_kudoed"]; ok {
+		if item.StartDate.After(oneWeekAgo) && !item.HasKudoed {
+			c.ToLog("Giving kudos to", item.Name, "by", s.FriendsInfo[friendId], "(", friendId, ")")
 
-			var hasKudos = item["has_kudoed"].(bool)
+			s.kudosFriend(c, item.ID)
 
-			if !hasKudos {
-				var activitiesId = strconv.Itoa(int(result["entity_id"].(float64)))
-
-				c.ToLog( "	new activity => ", activitiesId)
-
-				s.kudosFollower( c, activitiesId )
-
-				rand.Seed(time.Now().UnixNano())
-				n := rand.Intn(10) // n will be between 0 and 10
-				time.Sleep(time.Duration(n) * time.Second)
-			}
+			n := rand.Intn(10) // n will be between 0 and 10
+			time.Sleep(time.Duration(n) * time.Second)
 		}
 	}
 }

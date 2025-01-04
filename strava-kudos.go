@@ -57,8 +57,22 @@ func main() {
 
 		c.ToLog("Friends: ", s.Friends)
 
+		// Create a semaphore channel to limit concurrency to 8
+		sem := make(chan struct{}, 8)
+
 		for _, friendId := range s.Friends {
+			sem <- struct{}{} // Acquire a slot
+
+			go func(friendId string) {
+				defer func() { <-sem }() // Release the slot
+
 				s.ParseAndKudosFriend(friendId)
+			}(friendId)
+		}
+
+		// Wait for all goroutines to finish
+		for i := 0; i < cap(sem); i++ {
+			sem <- struct{}{}
 		}
 
 		c.ToLog(" THE END LOOP ")
@@ -77,5 +91,7 @@ func initDebug(c *parser.Client) {
 			log.Panicf("func initDebug(): failed convert 'debugString' to bool : %s", err)
 		}
 		c.SetDebug(debug)
+	} else {
+		c.SetDebug(true)
 	}
 }
