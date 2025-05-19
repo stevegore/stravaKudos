@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/stevegore/stravaKudos/bot"
-	"github.com/stevegore/stravaKudos/parser"
 
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
@@ -42,17 +41,18 @@ func init() {
 	}))
 	slog.SetDefault(logger)
 
-	slog.Info("starting strava kudos bot")
+	slog.Info("starting Strava kudos bot")
 	slog.Debug("debug mode enabled")
 }
 
+// main is the entry point of the application.
+// It initializes and runs the Strava bot.
 func main() {
 
-	c := parser.NewClient()
 	s := bot.NewStravaBot()
 	cron := cron.New()
 
-	kudosAllFriendsActivities(c, s) // Do it at start up
+	kudosAllFriendsActivities(s) // Do it at start up
 
 	cronSchedules := []string{
 		"30 9 * * 0",   // Sunday at 9:30
@@ -64,7 +64,7 @@ func main() {
 	for _, schedule := range cronSchedules {
 		_, err := cron.AddFunc(schedule, func() {
 			delayRandomly()
-			kudosAllFriendsActivities(c, s)
+			kudosAllFriendsActivities(s)
 		})
 		if err != nil {
 			slog.Error("failed to schedule task", "error", err)
@@ -85,9 +85,9 @@ func delayRandomly() {
 	time.Sleep(delay)
 }
 
-func kudosAllFriendsActivities(c *parser.Client, s *bot.StravaBot) {
-	s.GetMyProfile(c)
-	s.GetMyFriends(c)
+func kudosAllFriendsActivities(s *bot.StravaBot) {
+	s.GetMyProfile()
+	s.GetMyFriends()
 	if len(s.Friends) == 0 {
 		slog.Info("no friends found")
 		return

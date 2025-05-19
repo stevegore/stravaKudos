@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
-
-	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *StravaBot) toAuth(c *parser.Client) {
+// ToAuth performs the authentication process for the Strava API.
+// It makes a POST request to the Strava authentication URL with the user's credentials.
+func (s *StravaBot) toAuth() {
 
 	missing := []string{}
 	requiredEnvVars := []string{"USER_EMAIL", "USER_PASSWORD", "CLIENT_SECRET"}
@@ -49,12 +49,13 @@ func (s *StravaBot) toAuth(c *parser.Client) {
 	authReqBodyJson, err := json.Marshal(authReqBody)
 	if err != nil {
 		slog.Error("error marshalling auth request body", "error", slog.String("error", err.Error()))
+		return
 	}
 
-	html, statusCode := c.MakeRequest(s.MapUrls["auth_url"], "POST", string(authReqBodyJson), headers)
+	html, statusCode := s.Client.MakeRequest(s.MapUrls["auth_url"], "POST", string(authReqBodyJson), headers)
 
 	if statusCode != 200 {
-		slog.Error("error getting auth response", "statusCode", statusCode)
+		slog.Error("error getting auth response", "statusCode", statusCode, "body", html)
 		os.Exit(5)
 	}
 
@@ -63,14 +64,18 @@ func (s *StravaBot) toAuth(c *parser.Client) {
 	err = json.Unmarshal([]byte(html), &result)
 	if err != nil {
 		slog.Error("error unmarshalling auth response", "error", slog.String("error", err.Error()))
+		return
 	}
 
-	if _, ok := result["access_token"]; ok {
-		s.authToken = result["access_token"].(string)
+	if accessToken, ok := result["access_token"].(string); ok {
+		s.authToken = accessToken
+		s.Client.SetAuthToken(accessToken)
 		err = s.saveAuthToken()
 		if err != nil {
 			slog.Error("error saving auth token", "error", err)
 		}
+	} else {
+		slog.Error("access_token not found or not a string in auth response")
 	}
 }
 

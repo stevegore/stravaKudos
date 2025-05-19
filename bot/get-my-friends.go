@@ -5,21 +5,17 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
-
-	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *StravaBot) GetMyFriends(c *parser.Client) {
-	var headers = map[string]string{}
-
-	headers["authorization"] = "access_token " + s.authToken
-
+// GetMyFriends retrieves the list of friends for the authenticated user.
+// It makes a GET request to the Strava API and returns the list of friends as a string.
+func (s *StravaBot) GetMyFriends() {
 	var myFolowersUrl = strings.ReplaceAll(s.MapUrls["friends_url"], "{ATHLETE-ID}", s.athleteId)
 
-	jsonData, statusCode := c.MakeRequest(myFolowersUrl, "GET", "", headers)
+	jsonData, statusCode := s.Client.MakeRequest(myFolowersUrl, "GET", "", nil)
 
 	if statusCode != 200 {
-		slog.Error("couldn't get friends", "statusCode", statusCode)
+		slog.Error("couldn't get friends", "statusCode", statusCode, "body", jsonData)
 		return
 	}
 
@@ -31,15 +27,30 @@ func (s *StravaBot) GetMyFriends(c *parser.Client) {
 	}
 
 	for _, result := range results {
-		if _, ok := result["id"]; ok {
+		if idFloat, ok := result["id"].(float64); ok {
+			friendsId := strconv.Itoa(int(idFloat))
 
-			friendsId := strconv.Itoa(int(result["id"].(float64)))
-
-			username := result["firstname"].(string) + " " + result["lastname"].(string)
+			firstname, fnOk := result["firstname"].(string)
+			lastname, lnOk := result["lastname"].(string)
+			username := ""
+			if fnOk {
+				username += firstname
+			}
+			if lnOk {
+				if fnOk {
+					username += " "
+				}
+				username += lastname
+			}
+			if username == "" {
+				slog.Warn("friend found with no name", "friendId", friendsId)
+				username = "Unnamed Friend"
+			}
 
 			s.Friends = append(s.Friends, friendsId)
-
 			s.FriendsInfo[friendsId] = username
+		} else {
+			slog.Warn("friend data found without a valid ID")
 		}
 	}
 }
