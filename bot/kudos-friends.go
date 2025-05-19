@@ -9,13 +9,19 @@ import (
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *StravaBot) kudosActivity(c *parser.Client, activityId int64) {
+func (s *StravaBot) kudosActivity(c *parser.Client, activity parser.Item) {
+	activityId := activity.ID
+	if activityId == 0 {
+		slog.Error("activity id is 0, can't give kudos")
+		return
+	}
+	slog.Debug("giving kudos", "activityId", activityId, "activityName", activity.Name)
 	var headers = map[string]string{}
 	headers["authorization"] = "access_token " + s.authToken
 
-	var myFolowersUrl = strings.ReplaceAll(s.MapUrls["kudos_url"], "{ACTIVITIES-ID}", strconv.Itoa(int(activityId)))
+	var kudosUrl = strings.ReplaceAll(s.MapUrls["kudos_url"], "{ACTIVITIES-ID}", strconv.Itoa(int(activityId)))
 
-	resp, statusCode := c.MakeRequest(myFolowersUrl, "POST", "", headers)
+	resp, statusCode := c.MakeRequest(kudosUrl, "POST", "", headers)
 
 	if statusCode != 201 {
 		slog.Error("couldn't give kudos", "statusCode", statusCode, "body", resp)

@@ -44,7 +44,7 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 		item := result.Item
 		if item.StartDate.After(recentEnough) && !item.HasKudoed {
 			slog.Info("giving kudos", "friend", friendName, "activity", item.Name, "date", item.StartDate.Format("2006-01-02 15:04"))
-			s.kudosActivity(c, item.ID)
+			s.kudosActivity(c, item)
 
 			n := 10 + rand.Intn(20) // n will be between 10 and 30
 			time.Sleep(time.Duration(n) * time.Second)
