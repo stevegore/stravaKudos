@@ -11,7 +11,7 @@ type StravaBot struct {
 func NewStravaBot() *StravaBot {
 	s := &StravaBot{}
 
-	var siteDomain = "https://strava.com"
+	var siteDomain = "https://cdn-1.strava.com"
 	var langParam = "hl=en"
 
 	s.MapUrls = map[string]string{
