@@ -22,7 +22,7 @@ func (s *StravaBot) GetMyFriends() {
 	var results []map[string]interface{}
 	err := json.Unmarshal([]byte(jsonData), &results)
 	if err != nil {
-		slog.Error("couldn't unmarshal friends", "err", slog.String("error", err.Error()))
+		slog.Error("couldn't unmarshal friends", slog.Any("error", err))
 		return
 	}
 

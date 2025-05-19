@@ -28,7 +28,7 @@ func (s *StravaBot) GetMyProfile() (jsonData string) {
 	err := json.Unmarshal([]byte(jsonData), &result)
 
 	if err != nil {
-		slog.Error("couldn't unmarshal my profile", "err", slog.String("error", err.Error()))
+		slog.Error("couldn't unmarshal my profile", slog.Any("error", err))
 		return
 	}
 

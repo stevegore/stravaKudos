@@ -16,14 +16,15 @@ import (
 func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 
 	friendName := s.FriendsInfo[friendId]
+	friendLogger := slog.With("friend", friendName, "friendId", friendId)
 
-	slog.Debug("getting activities", "friend", friendName, "friendId", friendId)
+	friendLogger.Debug("getting activities")
 	var feedFollowerUrl = strings.ReplaceAll(s.MapUrls["feed_url"], "{ATHLETE-ID}", friendId) + s.MapUrls["feed_param"]
 
 	jsonData, statusCode := s.Client.MakeRequest(feedFollowerUrl, "GET", "", nil)
 
 	if statusCode != 200 {
-		slog.Error("couldn't get friend's activities", "friend", friendName, "friendId", friendId, "statusCode", statusCode, "body", jsonData)
+		friendLogger.Error("couldn't get friend's activities", "statusCode", statusCode, "body", jsonData)
 		return
 	}
 
@@ -31,12 +32,12 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 
 	err := json.Unmarshal([]byte(jsonData), &results)
 	if err != nil {
-		slog.Error("couldn't unmarshal friend's activities", "friend", friendName, "friendId", friendId, "err", slog.String("error", err.Error()))
+		friendLogger.Error("couldn't unmarshal friend's activities", slog.Any("error", err))
 		return
 	}
 
 	if len(results) == 0 {
-		slog.Debug("no activities found for friend", "friend", friendName, "friendId", friendId)
+		friendLogger.Debug("no activities found for friend")
 		return
 	}
 
@@ -45,9 +46,9 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 	for _, result := range results {
 
 		item := result.Item
+		activityLogger := friendLogger.With("activity", item.Name, "date", item.StartDate.Format("2006-01-02 15:04"), "id", item.ID)
 		if item.StartDate.After(recentEnough) && !item.HasKudoed {
-			slog.Info("giving kudos", "friend", friendName, "activity", item.Name, "date", item.StartDate.Format("2006-01-02 15:04"))
-			s.kudosActivity(item)
+			s.kudosActivity(activityLogger, item)
 			activitiesKudoed++
 
 			n := 10 + rand.Intn(20)
@@ -55,6 +56,6 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 		}
 	}
 	if activitiesKudoed == 0 {
-		slog.Debug("no new activities to kudos for friend", "friend", friendName, "friendId", friendId)
+		friendLogger.Debug("no new activities to kudos for friend")
 	}
 }

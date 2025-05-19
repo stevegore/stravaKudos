@@ -8,21 +8,21 @@ import (
 	"github.com/stevegore/stravaKudos/parser"
 )
 
-func (s *StravaBot) kudosActivity(activity parser.Item) {
+func (s *StravaBot) kudosActivity(logger *slog.Logger, activity parser.Item) {
 	activityId := activity.ID
 	if activityId == 0 {
-		slog.Error("activity id is 0, can't give kudos")
+		logger.Error("activity id is 0, can't give kudos")
 		return
 	}
-	slog.Debug("giving kudos", "activityId", activityId, "activityName", activity.Name)
+	logger.Info("giving kudos")
 
 	var kudosUrl = strings.ReplaceAll(s.MapUrls["kudos_url"], "{ACTIVITIES-ID}", strconv.FormatInt(activityId, 10))
 
 	resp, statusCode := s.Client.MakeRequest(kudosUrl, "POST", "", nil)
 
 	if statusCode != 201 {
-		slog.Error("couldn't give kudos", "statusCode", statusCode, "body", resp, "activityId", activityId)
+		logger.Error("couldn't give kudos", "statusCode", statusCode, "body", resp)
 		return
 	}
-	slog.Debug("successfully gave kudos", "activityId", activityId, "activityName", activity.Name)
+	logger.Debug("successfully gave kudos")
 }

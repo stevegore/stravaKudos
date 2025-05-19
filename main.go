@@ -30,7 +30,7 @@ func init() {
 	level := slog.LevelInfo
 	debug, err := strconv.ParseBool(os.Getenv("DEBUG"))
 	if err != nil {
-		slog.Error("debug env variable must be a boolean, will assume true", "err", slog.String("error", err.Error()))
+		slog.Error("debug env variable must be a boolean, will assume true", slog.Any("error", err))
 		debug = true
 	}
 	if debug {
@@ -38,6 +38,13 @@ func init() {
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: level,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				t := a.Value.Time()
+				a.Value = slog.StringValue(t.Format(time.RFC3339))
+			}
+			return a
+		},
 	}))
 	slog.SetDefault(logger)
 
@@ -67,7 +74,7 @@ func main() {
 			kudosAllFriendsActivities(s)
 		})
 		if err != nil {
-			slog.Error("failed to schedule task", "error", err)
+			slog.Error("failed to schedule task", slog.Any("error", err))
 			os.Exit(1)
 		}
 	}

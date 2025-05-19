@@ -48,7 +48,7 @@ func (s *StravaBot) toAuth() {
 
 	authReqBodyJson, err := json.Marshal(authReqBody)
 	if err != nil {
-		slog.Error("error marshalling auth request body", "error", slog.String("error", err.Error()))
+		slog.Error("error marshalling auth request body", slog.Any("error", err))
 		return
 	}
 
@@ -63,7 +63,7 @@ func (s *StravaBot) toAuth() {
 
 	err = json.Unmarshal([]byte(html), &result)
 	if err != nil {
-		slog.Error("error unmarshalling auth response", "error", slog.String("error", err.Error()))
+		slog.Error("error unmarshalling auth response", slog.Any("error", err))
 		return
 	}
 
