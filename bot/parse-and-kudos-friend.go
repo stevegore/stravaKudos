@@ -21,9 +21,9 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 	headers["authorization"] = "access_token " + s.authToken
 
 	slog.Debug("getting activities", "friend", friendName)
-	var feedFolowerUrl = strings.ReplaceAll(s.MapUrls["feed_url"], "{ATHLETE-ID}", friendId) + s.MapUrls["feed_param"]
+	var feedFollowerUrl = strings.ReplaceAll(s.MapUrls["feed_url"], "{ATHLETE-ID}", friendId) + s.MapUrls["feed_param"]
 
-	jsonData, statusCode := c.MakeRequest(feedFolowerUrl, "GET", "", headers)
+	jsonData, statusCode := c.MakeRequest(feedFollowerUrl, "GET", "", headers)
 
 	if statusCode != 200 {
 		slog.Error("couldn't get friend's activities", "statusCode", statusCode)
@@ -38,15 +38,15 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 		return
 	}
 
-	oneWeekAgo := time.Now().AddDate(0, 0, -7)
+	recentEnough := time.Now().AddDate(0, 0, -2)
 	for _, result := range results {
 
 		item := result.Item
-		if item.StartDate.After(oneWeekAgo) && !item.HasKudoed {
+		if item.StartDate.After(recentEnough) && !item.HasKudoed {
 			slog.Info("giving kudos", "friend", friendName, "activity", item.Name, "date", item.StartDate.Format("2006-01-02 15:04"))
-			s.kudosFriend(c, item.ID)
+			s.kudosActivity(c, item.ID)
 
-			n := rand.Intn(10) // n will be between 0 and 10
+			n := 10 + rand.Intn(20) // n will be between 10 and 30
 			time.Sleep(time.Duration(n) * time.Second)
 		}
 	}
