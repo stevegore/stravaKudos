@@ -54,35 +54,38 @@ func main() {
 
 	kudosAllFriendsActivities(c, s) // Do it at start up
 
-	// Schedule the kudosAllFriendsActivities function to run at 8:44 AM and 12:04 every day
-	_, err := cron.AddFunc("44 8 * * *", func() {
-		kudosAllFriendsActivities(c, s)
-	})
-	if err != nil {
-		slog.Error("failed to schedule task", "error", err)
-		os.Exit(1)
+	cronSchedules := []string{
+		"30 9 * * 0",   // Sunday at 9:30
+		"44 8 * * 1-5", // Weekdays at 8:44
+		"24 10 * * 6",  // Saturday at 10:24
+		"4 12 * * *",   // Every day at 12:04
 	}
 
-	_, err = cron.AddFunc("4 12 * * *", func() {
-		kudosAllFriendsActivities(c, s)
-	})
-	if err != nil {
-		slog.Error("failed to schedule task", "error", err)
-		os.Exit(1)
+	for _, schedule := range cronSchedules {
+		_, err := cron.AddFunc(schedule, func() {
+			delayRandomly()
+			kudosAllFriendsActivities(c, s)
+		})
+		if err != nil {
+			slog.Error("failed to schedule task", "error", err)
+			os.Exit(1)
+		}
 	}
+
 	cron.Start()
 
 	// Keep the program running
 	select {}
 }
 
-func kudosAllFriendsActivities(c *parser.Client, s *bot.StravaBot) {
-
+func delayRandomly() {
 	// Delay a random number of minutes between 1-10 minutes
 	delay := time.Duration(rand.Intn(10)+1) * time.Minute
 	slog.Debug("pausing for random interval", "duration", delay.String())
 	time.Sleep(delay)
+}
 
+func kudosAllFriendsActivities(c *parser.Client, s *bot.StravaBot) {
 	s.GetMyProfile(c)
 	s.GetMyFriends(c)
 	if len(s.Friends) == 0 {
