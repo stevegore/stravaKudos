@@ -8,7 +8,7 @@ import (
 
 	"math/rand"
 
-	"github.com/stevegore/stravaKudos/parser"
+	"github.com/stevegore/stravaKudos/stravaapi"
 )
 
 // ParseAndKudosFriend parses a friend's activity feed and gives kudos to their activities.
@@ -19,16 +19,16 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 	friendLogger := slog.With("friend", friendName, "friendId", friendId)
 
 	friendLogger.Debug("getting activities")
-	var feedFollowerUrl = strings.ReplaceAll(s.MapUrls["feed_url"], "{ATHLETE-ID}", friendId) + s.MapUrls["feed_param"]
+	feedFollowerURL := strings.ReplaceAll(s.apiEndpoints["feed_url"], "{ATHLETE-ID}", friendId) + s.apiEndpoints["feed_param"]
 
-	jsonData, statusCode := s.Client.MakeRequest(feedFollowerUrl, "GET", "", nil)
+	jsonData, statusCode := s.Client.MakeRequest(feedFollowerURL, "GET", "", nil)
 
 	if statusCode != 200 {
 		friendLogger.Error("couldn't get friend's activities", "statusCode", statusCode, "body", jsonData)
 		return
 	}
 
-	var results []parser.FeedEntry
+	var results []stravaapi.FeedEntry
 
 	err := json.Unmarshal([]byte(jsonData), &results)
 	if err != nil {
@@ -41,18 +41,18 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 		return
 	}
 
-	recentEnough := time.Now().AddDate(0, 0, -2)
+	activityCutoffDate := time.Now().AddDate(0, 0, -2)
 	activitiesKudoed := 0
 	for _, result := range results {
 
 		item := result.Item
 		activityLogger := friendLogger.With("activity", item.Name, "date", item.StartDate.Format("2006-01-02 15:04"), "id", item.ID)
-		if item.StartDate.After(recentEnough) && !item.HasKudoed {
+		if item.StartDate.After(activityCutoffDate) && !item.HasKudoed {
 			s.kudosActivity(activityLogger, item)
 			activitiesKudoed++
 
-			n := 10 + rand.Intn(20)
-			time.Sleep(time.Duration(n) * time.Second)
+			sleepDurationSeconds := 10 + rand.Intn(20)
+			time.Sleep(time.Duration(sleepDurationSeconds) * time.Second)
 		}
 	}
 	if activitiesKudoed == 0 {

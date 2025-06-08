@@ -10,7 +10,7 @@ import (
 // It makes a GET request to the Strava API and returns the profile information as a string.
 func (s *StravaBot) GetMyProfile() (jsonData string) {
 
-	jsonData, statusCode := s.Client.MakeRequest(s.MapUrls["my_profile"], "GET", "", nil)
+	jsonData, statusCode := s.Client.MakeRequest(s.apiEndpoints["my_profile"], "GET", "", nil)
 
 	if statusCode == 401 {
 		s.toAuth()
@@ -33,7 +33,7 @@ func (s *StravaBot) GetMyProfile() (jsonData string) {
 	}
 
 	if idFloat, ok := result["id"].(float64); ok {
-		s.athleteId = strconv.Itoa(int(idFloat))
+		s.athleteID = strconv.Itoa(int(idFloat))
 	} else {
 		slog.Error("athlete id not found or not a number in profile response")
 	}

@@ -1,25 +1,25 @@
 package bot
 
-import "github.com/stevegore/stravaKudos/parser"
+import "github.com/stevegore/stravaKudos/stravaapi"
 
 // StravaBot represents a bot for interacting with the Strava API.
 type StravaBot struct {
-	authToken   string
-	athleteId   string
-	Friends     []string
-	FriendsInfo map[string]string
-	MapUrls     map[string]string
-	Client      *parser.Client
+	authToken    string
+	athleteID    string
+	Friends      []string
+	FriendsInfo  map[string]string
+	apiEndpoints map[string]string
+	Client       *stravaapi.Client
 }
 
 // NewStravaBot creates a new instance of StravaBot.
 func NewStravaBot() *StravaBot {
-	s := &StravaBot{}
+	bot := &StravaBot{}
 
 	var siteDomain = "https://cdn-1.strava.com"
 	var langParam = "hl=en"
 
-	s.MapUrls = map[string]string{
+	bot.apiEndpoints = map[string]string{
 		"auth_url":    siteDomain + "/api/v3/oauth/internal/token?" + langParam,
 		"my_profile":  siteDomain + "/api/v3/athlete?" + langParam,
 		"friends_url": siteDomain + "/api/v3/athletes/{ATHLETE-ID}/friends?" + langParam,
@@ -28,18 +28,18 @@ func NewStravaBot() *StravaBot {
 		"kudos_url":   siteDomain + "/api/v3/activities/{ACTIVITIES-ID}/kudos?" + langParam,
 	}
 
-	s.ReadAuthToken()
+	bot.ReadAuthToken()
 
-	if s.authToken != "" {
-		s.Client = parser.NewClient(s.authToken)
+	if bot.authToken != "" {
+		bot.Client = stravaapi.NewClient(bot.authToken)
 	} else {
-		s.Client = parser.NewClient()
+		bot.Client = stravaapi.NewClient()
 	}
 
-	s.Friends = []string{}
-	s.FriendsInfo = make(map[string]string)
+	bot.Friends = []string{}
+	bot.FriendsInfo = make(map[string]string)
 
-	return s
+	return bot
 }
 
 // Run starts the Strava bot.

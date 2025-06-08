@@ -56,10 +56,10 @@ func init() {
 // It initializes and runs the Strava bot.
 func main() {
 
-	s := bot.NewStravaBot()
-	cron := cron.New()
+	stravaBot := bot.NewStravaBot()
+	cronJob := cron.New()
 
-	kudosAllFriendsActivities(s) // Do it at start up
+	performKudosCycle(stravaBot) // Do it at start up
 
 	cronSchedules := []string{
 		"30 9 * * 0",   // Sunday at 9:30
@@ -69,9 +69,9 @@ func main() {
 	}
 
 	for _, schedule := range cronSchedules {
-		_, err := cron.AddFunc(schedule, func() {
+		_, err := cronJob.AddFunc(schedule, func() {
 			delayRandomly()
-			kudosAllFriendsActivities(s)
+			performKudosCycle(stravaBot)
 		})
 		if err != nil {
 			slog.Error("failed to schedule task", slog.Any("error", err))
@@ -79,7 +79,7 @@ func main() {
 		}
 	}
 
-	cron.Start()
+	cronJob.Start()
 
 	// Keep the program running
 	select {}
@@ -92,25 +92,25 @@ func delayRandomly() {
 	time.Sleep(delay)
 }
 
-func kudosAllFriendsActivities(s *bot.StravaBot) {
-	s.GetMyProfile()
-	s.GetMyFriends()
-	if len(s.Friends) == 0 {
+func performKudosCycle(stravaBot *bot.StravaBot) {
+	stravaBot.GetMyProfile()
+	stravaBot.GetMyFriends()
+	if len(stravaBot.Friends) == 0 {
 		slog.Info("no friends found")
 		return
 	}
-	slog.Debug("retrieved friends", "friend count", strconv.Itoa(len(s.Friends)))
+	slog.Debug("retrieved friends", "friend count", strconv.Itoa(len(stravaBot.Friends)))
 
 	// Create a semaphore channel to limit concurrency to 8
 	sem := make(chan struct{}, 8)
 
-	for _, friendId := range s.Friends {
+	for _, friendId := range stravaBot.Friends {
 		sem <- struct{}{} // Acquire a slot
 
-		go func(friendId string) {
+		go func(id string) {
 			defer func() { <-sem }() // Release the slot
 
-			s.ParseAndKudosFriend(friendId)
+			stravaBot.ParseAndKudosFriend(id)
 		}(friendId)
 	}
 

@@ -46,22 +46,22 @@ func (s *StravaBot) toAuth() {
 		Password:     password,
 	}
 
-	authReqBodyJson, err := json.Marshal(authReqBody)
+	authReqBodyJSON, err := json.Marshal(authReqBody)
 	if err != nil {
 		slog.Error("error marshalling auth request body", slog.Any("error", err))
 		return
 	}
 
-	html, statusCode := s.Client.MakeRequest(s.MapUrls["auth_url"], "POST", string(authReqBodyJson), headers)
+	responseBody, statusCode := s.Client.MakeRequest(s.apiEndpoints["auth_url"], "POST", string(authReqBodyJSON), headers)
 
 	if statusCode != 200 {
-		slog.Error("error getting auth response", "statusCode", statusCode, "body", html)
+		slog.Error("error getting auth response", "statusCode", statusCode, "body", responseBody)
 		os.Exit(5)
 	}
 
 	var result map[string]interface{}
 
-	err = json.Unmarshal([]byte(html), &result)
+	err = json.Unmarshal([]byte(responseBody), &result)
 	if err != nil {
 		slog.Error("error unmarshalling auth response", slog.Any("error", err))
 		return

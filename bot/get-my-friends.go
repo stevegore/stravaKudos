@@ -10,9 +10,9 @@ import (
 // GetMyFriends retrieves the list of friends for the authenticated user.
 // It makes a GET request to the Strava API and returns the list of friends as a string.
 func (s *StravaBot) GetMyFriends() {
-	var myFolowersUrl = strings.ReplaceAll(s.MapUrls["friends_url"], "{ATHLETE-ID}", s.athleteId)
+	followersURL := strings.ReplaceAll(s.apiEndpoints["friends_url"], "{ATHLETE-ID}", s.athleteID)
 
-	jsonData, statusCode := s.Client.MakeRequest(myFolowersUrl, "GET", "", nil)
+	jsonData, statusCode := s.Client.MakeRequest(followersURL, "GET", "", nil)
 
 	if statusCode != 200 {
 		slog.Error("couldn't get friends", "statusCode", statusCode, "body", jsonData)

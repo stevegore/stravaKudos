@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stevegore/stravaKudos/parser"
+	"github.com/stevegore/stravaKudos/stravaapi"
 )
 
-func (s *StravaBot) kudosActivity(logger *slog.Logger, activity parser.Item) {
+func (s *StravaBot) kudosActivity(logger *slog.Logger, activity stravaapi.Item) {
 	activityId := activity.ID
 	if activityId == 0 {
 		logger.Error("activity id is 0, can't give kudos")
@@ -16,12 +16,12 @@ func (s *StravaBot) kudosActivity(logger *slog.Logger, activity parser.Item) {
 	}
 	logger.Info("giving kudos")
 
-	var kudosUrl = strings.ReplaceAll(s.MapUrls["kudos_url"], "{ACTIVITIES-ID}", strconv.FormatInt(activityId, 10))
+	kudosURL := strings.ReplaceAll(s.apiEndpoints["kudos_url"], "{ACTIVITIES-ID}", strconv.FormatInt(activityId, 10))
 
-	resp, statusCode := s.Client.MakeRequest(kudosUrl, "POST", "", nil)
+	responseBody, statusCode := s.Client.MakeRequest(kudosURL, "POST", "", nil)
 
 	if statusCode != 201 {
-		logger.Error("couldn't give kudos", "statusCode", statusCode, "body", resp)
+		logger.Error("couldn't give kudos", "statusCode", statusCode, "body", responseBody)
 		return
 	}
 	logger.Debug("successfully gave kudos")
