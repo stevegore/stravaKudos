@@ -47,7 +47,16 @@ func (s *StravaBot) ParseAndKudosFriend(friendId string) {
 
 		item := result.Item
 		activityLogger := friendLogger.With("activity", item.Name, "date", item.StartDate.Format("2006-01-02 15:04"), "id", item.ID)
+
+		// Check if activity is recent and not kudoed yet
 		if item.StartDate.After(activityCutoffDate) && !item.HasKudoed {
+
+			// Skip anything that's not worthy of kudos
+			if !isKudosWorthy(item) {
+				activityLogger.Debug("activity not worthy of kudos", "sportType", item.SportType, "distance", item.Distance, "elapsedTime", item.ElapsedTime)
+				continue
+			}
+
 			s.kudosActivity(activityLogger, item)
 			activitiesKudoed++
 
